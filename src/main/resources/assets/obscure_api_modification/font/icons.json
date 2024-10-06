@@ -1,0 +1,17 @@
+{
+  "providers": [
+    {
+      "type": "reference",
+      "id": "obscure_api:icons"
+    },
+    {
+      "type": "bitmap",
+      "file": "obscure_api_modification:icons/generic.png",
+      "ascent": 9,
+      "height": 11,
+      "chars": [
+        "\uEA31\uEA32\uEA33\uEA34\uEA35\uEA36\uEA37\uEA38\uEA39\uEA40"
+      ]
+    }
+  ]
+}

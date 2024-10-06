@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "de.cadentem.obscure_api_modification.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "obscure_api_modification.refmap.json",
+  "client": [
+    "client.TextUtilsMixin",
+    "client.TooltipBuilder$ModulesAccessor",
+    "client.TooltipBuilderMixin"
+  ]
+}
