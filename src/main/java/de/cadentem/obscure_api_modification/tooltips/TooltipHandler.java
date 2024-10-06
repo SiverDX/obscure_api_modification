@@ -10,7 +10,6 @@ import de.cadentem.obscure_api_modification.mixin.client.TooltipBuilder$ModulesA
 import net.bettercombat.api.WeaponAttributes;
 import net.bettercombat.logic.WeaponRegistry;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.ItemTags;
@@ -19,7 +18,6 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobType;
 import net.minecraft.world.entity.ai.attributes.Attribute;
-import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
@@ -28,7 +26,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TieredItem;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
-import net.minecraftforge.common.ForgeMod;
 import net.minecraftforge.registries.ForgeRegistries;
 import top.theillusivec4.curios.api.CuriosApi;
 import top.theillusivec4.curios.api.SlotContext;
@@ -93,7 +90,7 @@ public class TooltipHandler {
         icons = icons + getHarvestIcon(stack);
 
         if (!damageCollection.isEmpty()) {
-            icons = icons + getAttackDamageIcon(player, damageCollection, stack) + getAttackSpeedIcon(attackSpeedCollection);
+            icons = icons + getAttackDamageIcon(player, damageCollection, stack) + getAttackSpeedIcon(player, attackSpeedCollection);
 
             icons = icons + getAttackRangeIcon(player, stack);
         } else {
@@ -123,7 +120,7 @@ public class TooltipHandler {
         }
     }
 
-    private static String getIcon(boolean percent, String icon, Collection<AttributeModifier> modifiers) {
+    private static String getIcon(boolean isPercentage, final String icon, final Collection<AttributeModifier> modifiers) {
         if (modifiers != null && !modifiers.isEmpty()) {
             boolean forcePercentage = true;
 
@@ -138,13 +135,13 @@ public class TooltipHandler {
 
             if (forcePercentage) {
                 value = Utils.calculateAttributes(1, modifiers) /* Remove the fake base */ - 1;
-                percent = true;
+                isPercentage = true;
             } else {
                 value = Utils.calculateAttributes(0, modifiers);
             }
 
             if (value != 0) {
-                if (percent) {
+                if (isPercentage) {
                     return icon + DECIMAL.format(value * 100).replace(".0", "") + "% ";
                 } else {
                     return icon + DECIMAL.format(value).replace(".0", "") + " ";
@@ -155,10 +152,10 @@ public class TooltipHandler {
         return "";
     }
 
-    private static String getAttackDamageIcon(final Player player, final Collection<AttributeModifier> modifier, final ItemStack stack) {
-        if (modifier != null && !modifier.isEmpty()) {
-            double value = Utils.calculateAttributes(player.getAttributeBaseValue(Attributes.ATTACK_DAMAGE), modifier) + EnchantmentHelper.getDamageBonus(stack, MobType.UNDEFINED);
-            return Icons.DAMAGE.get() + DECIMAL.format(value).replace(".0", "") + " ";
+    private static String getAttackDamageIcon(final Player player, final Collection<AttributeModifier> modifiers, final ItemStack stack) {
+        if (modifiers != null && !modifiers.isEmpty()) {
+            double attackDamage = Utils.calculateAttributes(player.getAttributeBaseValue(Attributes.ATTACK_DAMAGE), modifiers) + EnchantmentHelper.getDamageBonus(stack, MobType.UNDEFINED);
+            return Icons.DAMAGE.get() + DECIMAL.format(attackDamage).replace(".0", "") + " ";
         } else {
             return "";
         }
@@ -200,17 +197,16 @@ public class TooltipHandler {
                 return "";
             }
 
-            int harvestLevel = tieredItem.getTier().getLevel();
-            harvestLevel = Mth.clamp(harvestLevel, 0, 4);
+            int harvestLevel = Mth.clamp(tieredItem.getTier().getLevel(), 0, 4);
             return Component.translatable("icon.harvest." + harvestLevel).withStyle(TextUtils.ICONS).getString() + " ";
         }
 
         return "";
     }
 
-    private static String getAttackSpeedIcon(final Collection<AttributeModifier> modifier) {
-        if (modifier != null && !modifier.isEmpty()) {
-            double value = Utils.calculateAttributes(getBaseValue(Attributes.ATTACK_SPEED), modifier);
+    private static String getAttackSpeedIcon(final Player player, final Collection<AttributeModifier> modifiers) {
+        if (modifiers != null && !modifiers.isEmpty()) {
+            double value = Utils.calculateAttributes(player.getAttributeBaseValue(Attributes.ATTACK_SPEED), modifiers);
 
             if (value <= 0.6) {
                 return Icons.ATTACK_SPEED_VERY_SLOW.get() + " ";
@@ -228,33 +224,16 @@ public class TooltipHandler {
         }
     }
 
-    private static String getDurabilityIcon(ItemStack stack) {
+    private static String getDurabilityIcon(final ItemStack stack) {
         if (stack.getMaxDamage() > 0) {
-            String var10000 = Icons.DURABILITY.get();
-            return var10000 + (stack.getMaxDamage() - stack.getDamageValue()) + "§8/" + stack.getMaxDamage() + "§f ";
+            return Icons.DURABILITY.get() + (stack.getMaxDamage() - stack.getDamageValue()) + "§8/" + stack.getMaxDamage() + "§f ";
         } else {
             return "";
         }
     }
 
-    private static double getBaseValue(final Attribute attribute) {
-        LocalPlayer player = Minecraft.getInstance().player;
-
-        if (player == null) {
-            return 0;
-        }
-
-        AttributeInstance instance = player.getAttribute(attribute);
-
-        if (instance == null) {
-            return 0;
-        }
-
-        return instance.getBaseValue();
-    }
-
     private static Map<String, Collection<AttributeModifier>> getDefensiveAttributes(final Multimap<Attribute, AttributeModifier> attributeModifiers) {
-        Map<String, Collection<AttributeModifier>> defensiveModifiers = new HashMap<>();
+        Map<String, Collection<AttributeModifier>> modifiers = new HashMap<>();
 
         Collection<AttributeModifier> armorModifiers = new ArrayList<>();
         Collection<AttributeModifier> armorToughnessModifiers = new ArrayList<>();
@@ -279,11 +258,11 @@ public class TooltipHandler {
             }
         }
 
-        defensiveModifiers.put("armor", armorModifiers);
-        defensiveModifiers.put("armor_toughness", armorToughnessModifiers);
-        defensiveModifiers.put("knockback_resistance", knockbackResistanceModifiers);
-        defensiveModifiers.put("maxHealth", maxHealthModifiers);
+        modifiers.put("armor", armorModifiers);
+        modifiers.put("armor_toughness", armorToughnessModifiers);
+        modifiers.put("knockback_resistance", knockbackResistanceModifiers);
+        modifiers.put("maxHealth", maxHealthModifiers);
 
-        return defensiveModifiers;
+        return modifiers;
     }
 }
