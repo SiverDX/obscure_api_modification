@@ -36,6 +36,11 @@ import java.util.*;
 public class TooltipHandler {
     private static final DecimalFormat DECIMAL = new DecimalFormat("##.#");
 
+    private static final String MAX_HEALTH = "max_health";
+    private static final String ARMOR = "armor";
+    private static final String ARMOR_TOUGHNESS = "armor_toughness";
+    private static final String KNOCKBACK_RESISTANCE = "knockback_resistance";
+
     @SuppressWarnings("ConstantValue")
     public static void buildEquipmentIcons(final Player player, final List<Component> tooltips, final ItemStack stack, final boolean isCurio) {
         if (Utils.isValidEquipment(stack) || TooltipBuilder$ModulesAccessor.obscure_api_modification$hasTooltip(stack.getItem(), Tooltip.Type.ICONS_START) || TooltipBuilder$ModulesAccessor.obscure_api_modification$hasTooltip(stack.getItem(), Tooltip.Type.ICONS_END)) {
@@ -57,7 +62,7 @@ public class TooltipHandler {
             icons = icons + Icons.FOOD.get() + properties.getNutrition() + " ";
         }
 
-        if (properties.getSaturationModifier() > 0.0F) {
+        if (properties.getSaturationModifier() > 0) {
             icons = icons + Icons.FOOD_SATURATION.get() + (int) properties.getSaturationModifier() * 100.0F + "% ";
         }
 
@@ -91,7 +96,6 @@ public class TooltipHandler {
 
         if (!damageCollection.isEmpty()) {
             icons = icons + getAttackDamageIcon(player, damageCollection, stack) + getAttackSpeedIcon(player, attackSpeedCollection);
-
             icons = icons + getAttackRangeIcon(player, stack);
         } else {
             Map<String, Collection<AttributeModifier>> defensiveAttributes;
@@ -106,10 +110,10 @@ public class TooltipHandler {
                 return;
             }
 
-            icons = icons + getIcon(false, Icons.HEART.get(), defensiveAttributes.get("maxHealth"));
-            icons = icons + getIcon(false, Icons.ARMOR.get(), defensiveAttributes.get("armor"));
-            icons = icons + getIcon(false, Icons.ARMOR_TOUGHNESS.get(), defensiveAttributes.get("armor_toughness"));
-            icons = icons + getIcon(true, Icons.KNOCKBACK_RESISTANCE.get(), defensiveAttributes.get("knockback_resistance"));
+            icons = icons + getIcon(false, Icons.HEART.get(), defensiveAttributes.get(MAX_HEALTH));
+            icons = icons + getIcon(false, Icons.ARMOR.get(), defensiveAttributes.get(ARMOR));
+            icons = icons + getIcon(false, Icons.ARMOR_TOUGHNESS.get(), defensiveAttributes.get(ARMOR_TOUGHNESS));
+            icons = icons + getIcon(true, Icons.KNOCKBACK_RESISTANCE.get(), defensiveAttributes.get(KNOCKBACK_RESISTANCE));
         }
 
         icons = icons + getDurabilityIcon(stack);
@@ -161,7 +165,6 @@ public class TooltipHandler {
         }
     }
 
-    @SuppressWarnings("DataFlowIssue") // entity reach attribute is present
     private static String getAttackRangeIcon(final Player player, final ItemStack stack) {
         if (!ClientConfig.ATTACK_RANGE_ICON.get()) {
             return "";
@@ -207,25 +210,28 @@ public class TooltipHandler {
     private static String getAttackSpeedIcon(final Player player, final Collection<AttributeModifier> modifiers) {
         if (modifiers != null && !modifiers.isEmpty()) {
             double value = Utils.calculateAttributes(player.getAttributeBaseValue(Attributes.ATTACK_SPEED), modifiers);
+            String icon;
 
             if (value <= 0.6) {
-                return Icons.ATTACK_SPEED_VERY_SLOW.get() + " ";
-            } else if (value <= 1.0) {
-                return Icons.ATTACK_SPEED_SLOW.get() + " ";
-            } else if (value <= 2.0) {
-                return Icons.ATTACK_SPEED_MEDIUM.get() + " ";
-            } else if (value <= 3.0) {
-                return Icons.ATTACK_SPEED_FAST.get() + " ";
+                icon = Icons.ATTACK_SPEED_VERY_SLOW.get();
+            } else if (value <= 1) {
+                icon = Icons.ATTACK_SPEED_SLOW.get();
+            } else if (value <= 2) {
+                icon = Icons.ATTACK_SPEED_MEDIUM.get();
+            } else if (value <= 3) {
+                icon = Icons.ATTACK_SPEED_FAST.get();
             } else {
-                return Icons.ATTACK_SPEED_VERY_FAST.get() + " ";
+                icon = Icons.ATTACK_SPEED_VERY_FAST.get();
             }
+
+            return icon + " ";
         } else {
             return "";
         }
     }
 
     private static String getDurabilityIcon(final ItemStack stack) {
-        if (stack.getMaxDamage() > 0) {
+        if (stack.isDamageableItem()) {
             return Icons.DURABILITY.get() + (stack.getMaxDamage() - stack.getDamageValue()) + "§8/" + stack.getMaxDamage() + "§f ";
         } else {
             return "";
@@ -258,10 +264,10 @@ public class TooltipHandler {
             }
         }
 
-        modifiers.put("armor", armorModifiers);
-        modifiers.put("armor_toughness", armorToughnessModifiers);
-        modifiers.put("knockback_resistance", knockbackResistanceModifiers);
-        modifiers.put("maxHealth", maxHealthModifiers);
+        modifiers.put(MAX_HEALTH, maxHealthModifiers);
+        modifiers.put(ARMOR, armorModifiers);
+        modifiers.put(ARMOR_TOUGHNESS, armorToughnessModifiers);
+        modifiers.put(KNOCKBACK_RESISTANCE, knockbackResistanceModifiers);
 
         return modifiers;
     }
