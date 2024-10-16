@@ -76,6 +76,10 @@ public class Utils {
             return true;
         }
 
+        if (isCurios(stack)) {
+            return true;
+        }
+
         return stack.is(OAMItemTags.FORCE_TOOLTIP);
     }
 
