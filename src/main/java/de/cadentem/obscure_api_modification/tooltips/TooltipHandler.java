@@ -63,7 +63,7 @@ public class TooltipHandler {
         }
 
         if (properties.getSaturationModifier() > 0) {
-            icons = icons + Icons.FOOD_SATURATION.get() + (int) properties.getSaturationModifier() * 100.0F + "% ";
+            icons = icons + Icons.FOOD_SATURATION.get() + DECIMAL.format(properties.getSaturationModifier() * 100.0F) + "% ";
         }
 
         if (!icons.isEmpty()) {

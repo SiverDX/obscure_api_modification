@@ -35,5 +35,5 @@ side = "CLIENT"
 modId = "obscure_api"
 mandatory = true
 versionRange = "[15]"
-ordering = "AFTER"
+ordering = "BEFORE"
 side = "CLIENT"
