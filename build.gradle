@@ -70,7 +70,7 @@ repositories {
 dependencies {
     minecraft "net.neoforged:forge:${minecraft_version}-${neo_version}"
 
-    implementation fg.deobf("curse.maven:obscure-api-638417:4616364") // 15
+    implementation fg.deobf("curse.maven:obscure-api-638417:7167857") // 17
     compileOnly fg.deobf("curse.maven:curios-309927:5680164") // 5.10.0
 
     compileOnly fg.deobf("curse.maven:better-combat-by-daedelus-639842:5625757") // 1.8.6
