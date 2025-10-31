@@ -34,6 +34,6 @@ side = "CLIENT"
 [[dependencies."${ mod_id }"]]
 modId = "obscure_api"
 mandatory = true
-versionRange = "[17]"
+versionRange = "[17,)"
 ordering = "BEFORE"
 side = "CLIENT"
