@@ -20,4 +20,9 @@ public class OAM {
     public static ResourceLocation location(final String path) {
         return new ResourceLocation(MODID, path);
     }
+
+    /* TODO ?
+        - movement speed icon
+        - experience icon
+    */
 }

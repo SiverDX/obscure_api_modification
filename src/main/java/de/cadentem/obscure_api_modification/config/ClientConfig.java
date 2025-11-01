@@ -8,10 +8,12 @@ public class ClientConfig {
 
     public static final ForgeConfigSpec.BooleanValue HARVEST_LEVEL_ICON;
     public static final ForgeConfigSpec.BooleanValue ATTACK_RANGE_ICON;
+    public static final ForgeConfigSpec.BooleanValue ENABLE_CURIOS_ICONS;
 
     static {
         HARVEST_LEVEL_ICON = BUILDER.comment("Enable / disable the harvest level icon").define("harvest_level_icon", true);
         ATTACK_RANGE_ICON = BUILDER.comment("Enable / disable the attack range icon").define("attack_rage_icon", true);
+        ENABLE_CURIOS_ICONS = BUILDER.comment("Enable / disable icons for curios").define("curios_icons", true);
 
         SPEC = BUILDER.build();
     }

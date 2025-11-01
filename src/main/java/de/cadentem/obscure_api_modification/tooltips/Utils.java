@@ -1,6 +1,7 @@
 package de.cadentem.obscure_api_modification.tooltips;
 
 import de.cadentem.obscure_api_modification.OAM;
+import de.cadentem.obscure_api_modification.config.ClientConfig;
 import de.cadentem.obscure_api_modification.data.OAMItemTags;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -16,8 +17,13 @@ import java.util.List;
 public class Utils {
     public static final List<String> DAMAGE_ATTRIBUTES = List.of(
             "minecraft:generic.attack_damage",
+            // FIXME :: unsure but does this cause the attribute value calculation to be wrong?
             "attributeslib:fire_damage",
             "attributeslib:cold_damage"
+    );
+
+    public static final List<String> ATTACK_SPEED_ATTRIBUTES = List.of(
+            "minecraft:generic.attack_speed"
     );
 
     public static final List<String> ARMOR_ATTRIBUTES = List.of(
@@ -34,10 +40,6 @@ public class Utils {
 
     public static final List<String> MAX_HEALTH_ATTRIBUTES = List.of(
             "minecraft:generic.max_health"
-    );
-
-    public static final List<String> ATTACK_SPEED_ATTRIBUTES = List.of(
-            "minecraft:generic.attack_speed"
     );
 
     public static double calculateAttributes(final double base, final Collection<AttributeModifier> modifiers) {
@@ -76,7 +78,7 @@ public class Utils {
             return true;
         }
 
-        if (isCurios(stack)) {
+        if (ClientConfig.ENABLE_CURIOS_ICONS.get() && isCurios(stack)) {
             return true;
         }
 

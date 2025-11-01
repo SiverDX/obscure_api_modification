@@ -71,11 +71,20 @@ dependencies {
     minecraft "net.neoforged:forge:${minecraft_version}-${neo_version}"
 
     implementation fg.deobf("curse.maven:obscure-api-638417:7167857") // 17
-    compileOnly fg.deobf("curse.maven:curios-309927:5680164") // 5.10.0
+    implementation fg.deobf("curse.maven:curios-309927:6418456") // 5.14.1
 
     compileOnly fg.deobf("curse.maven:better-combat-by-daedelus-639842:5625757") // 1.8.6
     compileOnly fg.deobf("curse.maven:cloth-config-348521:5729105") // 11.1.136
     compileOnly fg.deobf("curse.maven:playeranimator-658587:4587214") // 1.0.2
+
+    /* --- Test --- */
+//    runtimeOnly fg.deobf("curse.maven:artifacts-312353:6399828")
+//    runtimeOnly fg.deobf("curse.maven:curios-309927:6418456")
+//    runtimeOnly fg.deobf("curse.maven:cloth-config-348521:5729105")
+//    runtimeOnly fg.deobf("curse.maven:architectury-api-419699:5137938")
+
+    runtimeOnly fg.deobf("curse.maven:celestial-artifacts-988784:6830685")
+    runtimeOnly fg.deobf("curse.maven:celestial-core-988783:6975065")
 
     /* --- Mixin Configuration --- */
     implementation(annotationProcessor("io.github.llamalad7:mixinextras-common:${mixin_extras_version}"))

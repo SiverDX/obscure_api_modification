@@ -15,6 +15,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class OAMItemTags extends ItemTagsProvider {
     public static final TagKey<Item> FORCE_TOOLTIP = ItemTags.create(OAM.location("force_tooltip"));
+    public static final TagKey<Item> BLACKLIST_TOOLTIP = ItemTags.create(OAM.location("blacklist_tooltip"));
 
     public OAMItemTags(final PackOutput output, final CompletableFuture<HolderLookup.Provider> lookup, @Nullable final ExistingFileHelper helper) {
         super(output, lookup, /* There are no block tags */ CompletableFuture.completedFuture(null), OAM.MODID, helper);
@@ -23,5 +24,6 @@ public class OAMItemTags extends ItemTagsProvider {
     @Override
     protected void addTags(@NotNull final HolderLookup.Provider lookup) {
         tag(FORCE_TOOLTIP);
+        tag(BLACKLIST_TOOLTIP);
     }
 }

@@ -6,6 +6,7 @@ import com.obscuria.obscureapi.api.utils.Icons;
 import com.obscuria.obscureapi.util.TextUtils;
 import de.cadentem.obscure_api_modification.OAM;
 import de.cadentem.obscure_api_modification.config.ClientConfig;
+import de.cadentem.obscure_api_modification.data.OAMItemTags;
 import de.cadentem.obscure_api_modification.mixin.client.TooltipBuilder$ModulesAccessor;
 import net.bettercombat.api.WeaponAttributes;
 import net.bettercombat.logic.WeaponRegistry;
@@ -31,7 +32,12 @@ import top.theillusivec4.curios.api.CuriosApi;
 import top.theillusivec4.curios.api.SlotContext;
 
 import java.text.DecimalFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class TooltipHandler {
     private static final DecimalFormat DECIMAL = new DecimalFormat("##.#");
@@ -41,8 +47,15 @@ public class TooltipHandler {
     private static final String ARMOR_TOUGHNESS = "armor_toughness";
     private static final String KNOCKBACK_RESISTANCE = "knockback_resistance";
 
+    private static final String ATTACK_DAMAGE = "attack_damage";
+    private static final String ATTACK_SPEED = "attack_speed";
+
     @SuppressWarnings("ConstantValue")
     public static void buildEquipmentIcons(final Player player, final List<Component> tooltips, final ItemStack stack, final boolean isCurio) {
+        if (stack.is(OAMItemTags.BLACKLIST_TOOLTIP)) {
+            return;
+        }
+
         if (Utils.isValidEquipment(stack) || TooltipBuilder$ModulesAccessor.obscure_api_modification$hasTooltip(stack.getItem(), Tooltip.Type.ICONS_START) || TooltipBuilder$ModulesAccessor.obscure_api_modification$hasTooltip(stack.getItem(), Tooltip.Type.ICONS_END)) {
             putIcons(player, tooltips, stack, isCurio);
         }
@@ -73,34 +86,31 @@ public class TooltipHandler {
 
     private static void putIcons(final Player player, final List<Component> tooltips, final ItemStack stack, final boolean isCurio) {
         String icons = TooltipBuilder$ModulesAccessor.obscure_api_modification$getLine(stack, Tooltip.Type.ICONS_START);
-        Multimap<Attribute, AttributeModifier> mainHand = stack.getAttributeModifiers(EquipmentSlot.MAINHAND);
+        Map<String, Collection<AttributeModifier>> offensiveModifiers;
 
-        Collection<AttributeModifier> damageCollection = new ArrayList<>();
-        Collection<AttributeModifier> attackSpeedCollection = new ArrayList<>();
-
-        for (Attribute attribute : mainHand.keySet()) {
-            ResourceLocation key = ForgeRegistries.ATTRIBUTES.getKey(attribute);
-
-            if (key == null) {
-                continue;
-            }
-
-            if (Utils.DAMAGE_ATTRIBUTES.contains(key.toString())) {
-                damageCollection.addAll(mainHand.get(attribute));
-            } else if (Utils.ATTACK_SPEED_ATTRIBUTES.contains(key.toString())) {
-                attackSpeedCollection.addAll(mainHand.get(attribute));
-            }
+        if (isCurio) {
+            //noinspection removal,deprecation,UnstableApiUsage -> ignore
+            offensiveModifiers = CuriosApi.getCuriosHelper().getCurioTags(stack.getItem()).stream().findFirst().map(slot -> getOffensiveAttributes(CuriosApi.getCuriosHelper().getAttributeModifiers(new SlotContext(slot, player, 0, false, true), UUID.randomUUID(), stack))).orElse(null);
+        } else {
+            offensiveModifiers = getOffensiveAttributes(stack.getAttributeModifiers(EquipmentSlot.MAINHAND));
         }
+
+        Collection<AttributeModifier> damageCollection = new ArrayList<>(offensiveModifiers.get(ATTACK_DAMAGE));
+        Collection<AttributeModifier> attackSpeedCollection = new ArrayList<>(offensiveModifiers.get(ATTACK_SPEED));
 
         icons = icons + getHarvestIcon(stack);
 
         if (!damageCollection.isEmpty()) {
-            icons = icons + getAttackDamageIcon(player, damageCollection, stack) + getAttackSpeedIcon(player, attackSpeedCollection);
+            icons = icons + getAttackDamageIcon(player, damageCollection, stack, isCurio) + getAttackSpeedIcon(player, attackSpeedCollection);
             icons = icons + getAttackRangeIcon(player, stack);
-        } else {
+        }
+
+        if (!isWeapon(stack, isCurio)) {
+            // To keep the original behaviour, only show defensive attributes for non-weapons
             Map<String, Collection<AttributeModifier>> defensiveAttributes;
 
             if (isCurio) {
+                //noinspection removal,deprecation,UnstableApiUsage -> ignore
                 defensiveAttributes = CuriosApi.getCuriosHelper().getCurioTags(stack.getItem()).stream().findFirst().map(slot -> getDefensiveAttributes(CuriosApi.getCuriosHelper().getAttributeModifiers(new SlotContext(slot, player, 0, false, true), UUID.randomUUID(), stack))).orElse(null);
             } else {
                 defensiveAttributes = getDefensiveAttributes(stack.getAttributeModifiers(LivingEntity.getEquipmentSlotForItem(stack)));
@@ -110,10 +120,10 @@ public class TooltipHandler {
                 return;
             }
 
-            icons = icons + getIcon(false, Icons.HEART.get(), defensiveAttributes.get(MAX_HEALTH));
-            icons = icons + getIcon(false, Icons.ARMOR.get(), defensiveAttributes.get(ARMOR));
-            icons = icons + getIcon(false, Icons.ARMOR_TOUGHNESS.get(), defensiveAttributes.get(ARMOR_TOUGHNESS));
-            icons = icons + getIcon(true, Icons.KNOCKBACK_RESISTANCE.get(), defensiveAttributes.get(KNOCKBACK_RESISTANCE));
+            icons = icons + getIcon(false, Icons.HEART.get(), defensiveAttributes.get(MAX_HEALTH), stack);
+            icons = icons + getIcon(false, Icons.ARMOR.get(), defensiveAttributes.get(ARMOR), stack);
+            icons = icons + getIcon(false, Icons.ARMOR_TOUGHNESS.get(), defensiveAttributes.get(ARMOR_TOUGHNESS), stack);
+            icons = icons + getIcon(true, Icons.KNOCKBACK_RESISTANCE.get(), defensiveAttributes.get(KNOCKBACK_RESISTANCE), stack);
         }
 
         icons = icons + getDurabilityIcon(stack);
@@ -124,14 +134,19 @@ public class TooltipHandler {
         }
     }
 
-    private static String getIcon(boolean isPercentage, final String icon, final Collection<AttributeModifier> modifiers) {
+    private static String getIcon(boolean isPercentage, final String icon, final Collection<AttributeModifier> modifiers, final ItemStack stack) {
+        return getIcon(isPercentage, icon, modifiers, stack, 0);
+    }
+
+    private static String getIcon(boolean isPercentage, final String icon, final Collection<AttributeModifier> modifiers, final ItemStack stack, final double base) {
         if (modifiers != null && !modifiers.isEmpty()) {
             boolean forcePercentage = true;
 
-            // If there are only multiplicative attribute modifiers then it's probably meant to apply on a global scale
+            // If there are only multiplicative attribute modifiers, then it's probably meant to apply on a global scale
             for (AttributeModifier modifier : modifiers) {
                 if (modifier.getOperation() == AttributeModifier.Operation.ADDITION) {
                     forcePercentage = false;
+                    break;
                 }
             }
 
@@ -141,7 +156,11 @@ public class TooltipHandler {
                 value = Utils.calculateAttributes(1, modifiers) /* Remove the fake base */ - 1;
                 isPercentage = true;
             } else {
-                value = Utils.calculateAttributes(0, modifiers);
+                value = Utils.calculateAttributes(base, modifiers);
+            }
+
+            if (icon.equals(Icons.DAMAGE.get())) {
+                value += EnchantmentHelper.getDamageBonus(stack, MobType.UNDEFINED);
             }
 
             if (value != 0) {
@@ -156,10 +175,11 @@ public class TooltipHandler {
         return "";
     }
 
-    private static String getAttackDamageIcon(final Player player, final Collection<AttributeModifier> modifiers, final ItemStack stack) {
+    private static String getAttackDamageIcon(final Player player, final Collection<AttributeModifier> modifiers, final ItemStack stack, final boolean isCurio) {
         if (modifiers != null && !modifiers.isEmpty()) {
-            double attackDamage = Utils.calculateAttributes(player.getAttributeBaseValue(Attributes.ATTACK_DAMAGE), modifiers) + EnchantmentHelper.getDamageBonus(stack, MobType.UNDEFINED);
-            return Icons.DAMAGE.get() + DECIMAL.format(attackDamage).replace(".0", "") + " ";
+            // Only add the player base attack damage to actual weapons (to match the minecraft tooltip)
+            double base = isWeapon(stack, isCurio) ? player.getAttributeBaseValue(Attributes.ATTACK_DAMAGE) : 0;
+            return getIcon(false, Icons.DAMAGE.get(), modifiers, stack, base);
         } else {
             return "";
         }
@@ -270,5 +290,35 @@ public class TooltipHandler {
         modifiers.put(KNOCKBACK_RESISTANCE, knockbackResistanceModifiers);
 
         return modifiers;
+    }
+
+    private static Map<String, Collection<AttributeModifier>> getOffensiveAttributes(final Multimap<Attribute, AttributeModifier> attributeModifiers) {
+        Map<String, Collection<AttributeModifier>> modifiers = new HashMap<>();
+        modifiers.put(ATTACK_DAMAGE, new ArrayList<>());
+        modifiers.put(ATTACK_SPEED, new ArrayList<>());
+
+        for (Attribute attribute : attributeModifiers.keySet()) {
+            ResourceLocation key = ForgeRegistries.ATTRIBUTES.getKey(attribute);
+
+            if (key == null) {
+                continue;
+            }
+
+            if (Utils.DAMAGE_ATTRIBUTES.contains(key.toString())) {
+                modifiers.get(ATTACK_DAMAGE).addAll(attributeModifiers.get(attribute));
+            } else if (Utils.ATTACK_SPEED_ATTRIBUTES.contains(key.toString())) {
+                modifiers.get(ATTACK_SPEED).addAll(attributeModifiers.get(attribute));
+            }
+        }
+
+        return modifiers;
+    }
+
+    private static boolean isWeapon(final ItemStack stack, final boolean isCurio) {
+        if (isCurio) {
+            return false;
+        }
+
+        return LivingEntity.getEquipmentSlotForItem(stack) == EquipmentSlot.MAINHAND;
     }
 }
