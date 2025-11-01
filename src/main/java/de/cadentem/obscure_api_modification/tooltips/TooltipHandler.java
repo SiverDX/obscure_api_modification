@@ -42,6 +42,9 @@ import java.util.UUID;
 public class TooltipHandler {
     private static final DecimalFormat DECIMAL = new DecimalFormat("##.#");
 
+    /** Exists because {@link Icons#ATTACK_SPEED} is missing 'icon.' to reference the correct translation key and it is too close to the value */
+    private static final String ATTACK_SPEED_ICON = "icon.attack_speed_custom";
+
     private static final String MAX_HEALTH = "max_health";
     private static final String ARMOR = "armor";
     private static final String ARMOR_TOUGHNESS = "armor_toughness";
@@ -95,17 +98,14 @@ public class TooltipHandler {
             offensiveModifiers = getOffensiveAttributes(stack.getAttributeModifiers(EquipmentSlot.MAINHAND));
         }
 
-        Collection<AttributeModifier> damageCollection = new ArrayList<>(offensiveModifiers.get(ATTACK_DAMAGE));
-        Collection<AttributeModifier> attackSpeedCollection = new ArrayList<>(offensiveModifiers.get(ATTACK_SPEED));
-
         icons = icons + getHarvestIcon(stack);
+        icons = icons + getAttackDamageIcon(player, offensiveModifiers.get(ATTACK_DAMAGE), stack, isCurio);
+        // Non-weapons won't use the hard-coded varying speed icons but rather use numbers like any other icon
+        icons = icons + (isWeapon(stack, isCurio) ? getAttackSpeedIcon(player, offensiveModifiers.get(ATTACK_SPEED)) : getIcon(false, TextUtils.translation(ATTACK_SPEED_ICON), offensiveModifiers.get(ATTACK_SPEED), stack));
 
-        if (!damageCollection.isEmpty()) {
-            icons = icons + getAttackDamageIcon(player, damageCollection, stack, isCurio) + getAttackSpeedIcon(player, attackSpeedCollection);
+        if (isWeapon(stack, isCurio)) {
             icons = icons + getAttackRangeIcon(player, stack);
-        }
-
-        if (!isWeapon(stack, isCurio)) {
+        } else {
             // To keep the original behaviour, only show defensive attributes for non-weapons
             Map<String, Collection<AttributeModifier>> defensiveAttributes;
 

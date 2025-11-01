@@ -21,8 +21,10 @@ public class OAM {
         return new ResourceLocation(MODID, path);
     }
 
-    /* TODO ?
+    /* TODO :: ideas
         - movement speed icon
         - experience icon
+        - attack knockback icon
+        - attack range modifier icon for non-weapons
     */
 }
