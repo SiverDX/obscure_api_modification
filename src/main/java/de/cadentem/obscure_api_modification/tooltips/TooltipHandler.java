@@ -93,7 +93,7 @@ public class TooltipHandler {
 
         if (isCurio) {
             //noinspection removal,deprecation,UnstableApiUsage -> ignore
-            offensiveModifiers = CuriosApi.getCuriosHelper().getCurioTags(stack.getItem()).stream().findFirst().map(slot -> getOffensiveAttributes(CuriosApi.getCuriosHelper().getAttributeModifiers(new SlotContext(slot, player, 0, false, true), UUID.randomUUID(), stack))).orElse(null);
+            offensiveModifiers = CuriosApi.getCuriosHelper().getCurioTags(stack.getItem()).stream().findFirst().map(slot -> getOffensiveAttributes(CuriosApi.getCuriosHelper().getAttributeModifiers(new SlotContext(slot, player, 0, false, true), UUID.randomUUID(), stack))).orElse(Map.of());
         } else {
             offensiveModifiers = getOffensiveAttributes(stack.getAttributeModifiers(EquipmentSlot.MAINHAND));
         }
@@ -111,13 +111,9 @@ public class TooltipHandler {
 
             if (isCurio) {
                 //noinspection removal,deprecation,UnstableApiUsage -> ignore
-                defensiveAttributes = CuriosApi.getCuriosHelper().getCurioTags(stack.getItem()).stream().findFirst().map(slot -> getDefensiveAttributes(CuriosApi.getCuriosHelper().getAttributeModifiers(new SlotContext(slot, player, 0, false, true), UUID.randomUUID(), stack))).orElse(null);
+                defensiveAttributes = CuriosApi.getCuriosHelper().getCurioTags(stack.getItem()).stream().findFirst().map(slot -> getDefensiveAttributes(CuriosApi.getCuriosHelper().getAttributeModifiers(new SlotContext(slot, player, 0, false, true), UUID.randomUUID(), stack))).orElse(Map.of());
             } else {
                 defensiveAttributes = getDefensiveAttributes(stack.getAttributeModifiers(LivingEntity.getEquipmentSlotForItem(stack)));
-            }
-
-            if (defensiveAttributes == null) {
-                return;
             }
 
             icons = icons + getIcon(false, Icons.HEART.get(), defensiveAttributes.get(MAX_HEALTH), stack);
