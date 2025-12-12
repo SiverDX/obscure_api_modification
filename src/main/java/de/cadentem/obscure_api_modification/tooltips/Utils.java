@@ -94,6 +94,10 @@ public class Utils {
             return false;
         }
 
-        return CuriosApi.getCurio(stack).isPresent();
+        if (CuriosApi.getCurio(stack).isPresent()) {
+            return !CuriosApi.getItemStackSlots(stack, true).isEmpty();
+        }
+
+        return false;
     }
 }
